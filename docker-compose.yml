@@ -1,0 +1,72 @@
+version: '3.9'
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Robot Oruga — Docker Compose
+#  Servicios: frontend (nginx), backend (node), mongo
+# ══════════════════════════════════════════════════════════════════════════════
+
+services:
+
+  # ── 1. Base de datos MongoDB ───────────────────────────────────────────────
+  mongo:
+    image: mongo:7.0
+    container_name: robot_mongo
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: robotlogs
+    volumes:
+      - mongo_data:/data/db       # Persistencia de datos entre reinicios
+    networks:
+      - robot_net
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── 2. Backend Node.js ─────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: robot_backend
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy   # Espera a que Mongo esté listo
+    environment:
+      NODE_ENV:  production
+      PORT:      3000
+      MONGO_URI: mongodb://mongo:27017/robotlogs
+    networks:
+      - robot_net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ── 3. Frontend Nginx ──────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: robot_frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy   # Espera a que el backend esté listo
+    ports:
+      - "80:80"         # Expuesto en la IP pública del servidor
+    networks:
+      - robot_net
+
+# ── Volumen persistente para MongoDB ──────────────────────────────────────────
+volumes:
+  mongo_data:
+    driver: local
+
+# ── Red interna (los servicios se ven por nombre) ─────────────────────────────
+networks:
+  robot_net:
+    driver: bridge
