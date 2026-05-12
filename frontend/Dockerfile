@@ -8,7 +8,7 @@ LABEL description="Frontend Dashboard - Nginx"
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Copiar archivos estáticos del dashboard
-COPY index.html /usr/share/nginx/html/index.html
+COPY . /usr/share/nginx/html
 
 # Puerto expuesto
 EXPOSE 80
