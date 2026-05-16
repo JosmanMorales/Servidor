@@ -3,36 +3,35 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Robot Oruga — Dashboard SO2</title>
+  <title>Robot Oruga Dashboard</title>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.1/socket.io.min.js"></script>
 
   <style>
-    :root {
+
+    :root{
       --bg:#0f1117;
       --surface:#1a1d27;
       --card:#21253a;
       --border:#2e3354;
       --accent:#4f8cff;
-      --accent2:#38e0c8;
-      --warn:#ffb020;
-      --danger:#ff4d6d;
       --success:#2dd36f;
+      --danger:#ff4d6d;
       --text:#e8eaf6;
       --muted:#7b82a8;
       --mono:'Courier New', monospace;
     }
 
     *{
-      box-sizing:border-box;
       margin:0;
       padding:0;
+      box-sizing:border-box;
     }
 
     body{
       background:var(--bg);
       color:var(--text);
-      font-family:'Segoe UI',system-ui,sans-serif;
+      font-family:'Segoe UI',sans-serif;
       min-height:100vh;
     }
 
@@ -43,10 +42,6 @@
       display:flex;
       align-items:center;
       gap:12px;
-    }
-
-    header h1{
-      font-size:20px;
     }
 
     header h1 span{
@@ -74,7 +69,7 @@
       background:var(--card);
       border:1px solid var(--border);
       border-radius:10px;
-      padding:18px;
+      padding:20px;
     }
 
     .metric{
@@ -89,17 +84,17 @@
 
     .cmd-grid{
       display:grid;
-      grid-template-columns:repeat(4,1fr);
-      gap:10px;
-      margin-top:15px;
+      grid-template-columns:repeat(3,1fr);
+      gap:12px;
+      margin-top:20px;
     }
 
     .cmd-btn{
       background:var(--surface);
       border:1px solid var(--border);
-      border-radius:8px;
+      border-radius:10px;
       color:white;
-      padding:14px;
+      padding:15px;
       cursor:pointer;
       font-size:16px;
       transition:.2s;
@@ -114,7 +109,7 @@
     .cmd-input-row{
       display:flex;
       gap:10px;
-      margin-top:15px;
+      margin-top:20px;
     }
 
     .cmd-input-row input{
@@ -137,15 +132,13 @@
 
     #cmd-feedback{
       margin-top:10px;
-      font-size:13px;
       color:var(--success);
     }
 
     .sensor-row{
       display:flex;
       justify-content:space-between;
-      margin-top:12px;
-      padding-bottom:10px;
+      padding:10px 0;
       border-bottom:1px solid var(--border);
     }
 
@@ -156,7 +149,7 @@
     table{
       width:100%;
       border-collapse:collapse;
-      margin-top:15px;
+      margin-top:20px;
     }
 
     th, td{
@@ -173,6 +166,7 @@
     }
 
     @media(max-width:900px){
+
       main{
         grid-template-columns:1fr;
       }
@@ -185,93 +179,124 @@
       .cmd-grid{
         grid-template-columns:repeat(2,1fr);
       }
+
     }
+
   </style>
+
 </head>
 
 <body>
 
 <header>
+
   <div style="font-size:28px">🤖</div>
-  <h1>Robot <span>Oruga</span> Dashboard</h1>
-  <span id="status-text">Conectando...</span>
-  <div class="status-dot" id="status-dot"></div>
+
+  <h1>
+    Robot <span>Oruga</span> Dashboard
+  </h1>
+
+  <span id="status-text">
+    Conectando...
+  </span>
+
+  <div class="status-dot"></div>
+
 </header>
 
 <main>
 
   <div class="card">
-    <div>Total de eventos</div>
+    <div>Total Eventos</div>
     <div class="metric" id="met-total">0</div>
   </div>
 
   <div class="card">
-    <div>Última distancia</div>
+    <div>Distancia</div>
     <div class="metric" id="met-dist">—</div>
   </div>
 
   <div class="card">
-    <div>Comandos enviados</div>
+    <div>Comandos</div>
     <div class="metric" id="met-cmds">0</div>
   </div>
 
   <!-- PANEL COMANDOS -->
+
   <div class="card cmd-panel">
-    <h2>Enviar comando al robot</h2>
+
+    <h2>Control Robot</h2>
 
     <div class="cmd-grid">
 
+      <!-- MOVIMIENTO -->
+
+      <button class="cmd-btn" onclick="sendCmd('F')">
+        F<br>ADELANTE
+      </button>
+
+      <button class="cmd-btn" onclick="sendCmd('B')">
+        B<br>ATRÁS
+      </button>
+
+      <button class="cmd-btn" onclick="sendCmd('S')">
+        S<br>STOP
+      </button>
+
+      <button class="cmd-btn" onclick="sendCmd('L')">
+        L<br>IZQUIERDA
+      </button>
+
+      <button class="cmd-btn" onclick="sendCmd('R')">
+        R<br>DERECHA
+      </button>
+
+      <!-- SERVOS -->
+
       <button class="cmd-btn" onclick="sendCmd('a')">
-        a<br>M1 ↑
+        a<br>S1 -
+      </button>
+
+      <button class="cmd-btn" onclick="sendCmd('d')">
+        d<br>S1 +
+      </button>
+
+      <button class="cmd-btn" onclick="sendCmd('w')">
+        w<br>S2 -
+      </button>
+
+      <button class="cmd-btn" onclick="sendCmd('s')">
+        s<br>S2 +
+      </button>
+
+      <button class="cmd-btn" onclick="sendCmd('q')">
+        q<br>S3 -
       </button>
 
       <button class="cmd-btn" onclick="sendCmd('e')">
-        e<br>M1 ↓
+        e<br>S3 +
       </button>
 
-      <button class="cmd-btn" onclick="sendCmd('c')">
-        c<br>M2 ↑
+      <button class="cmd-btn" onclick="sendCmd('z')">
+        z<br>S4 -
       </button>
 
-      <button class="cmd-btn" onclick="sendCmd('g')">
-        g<br>M2 ↓
+      <button class="cmd-btn" onclick="sendCmd('x')">
+        x<br>S4 +
       </button>
 
       <button class="cmd-btn" onclick="sendCmd('o')">
-        o<br>S1 -
+        o<br>S5 -
       </button>
 
-      <button class="cmd-btn" onclick="sendCmd('p')">
-        p<br>S1 +
-      </button>
-
-      <button class="cmd-btn" onclick="sendCmd('i')">
-        i<br>S2 -
-      </button>
-
-      <button class="cmd-btn" onclick="sendCmd('j')">
-        j<br>S2 +
-      </button>
-
-      <button class="cmd-btn" onclick="sendCmd('l')">
-        l<br>S3 -
-      </button>
-
-      <button class="cmd-btn" onclick="sendCmd('k')">
-        k<br>S3 +
-      </button>
-
-      <button class="cmd-btn" onclick="sendCmd('(')">
-        (<br>Garra -
-      </button>
-
-      <button class="cmd-btn" onclick="sendCmd('&')">
-        &amp;<br>Garra +
+      <button class="cmd-btn" onclick="sendCmd('c')">
+        c<br>S5 +
       </button>
 
     </div>
 
     <div class="cmd-input-row">
+
       <input
         type="text"
         id="cmd-custom"
@@ -282,13 +307,17 @@
       <button onclick="sendCustomCmd()">
         Enviar
       </button>
+
     </div>
 
     <div id="cmd-feedback"></div>
+
   </div>
 
   <!-- SENSORES -->
+
   <div class="card">
+
     <h2>Sensores</h2>
 
     <div class="sensor-row">
@@ -307,132 +336,231 @@
     </div>
 
     <div class="sensor-row">
-      <span>Última acción</span>
+      <span>Última Acción</span>
       <span id="s-action">—</span>
     </div>
+
   </div>
 
-  <!-- LOG -->
+  <!-- LOGS -->
+
   <div class="card log-panel">
-    <h2>Eventos en tiempo real</h2>
+
+    <h2>Eventos en Tiempo Real</h2>
 
     <table>
+
       <thead>
+
         <tr>
           <th>Hora</th>
           <th>Origen</th>
           <th>Acción</th>
           <th>Distancia</th>
           <th>Humedad</th>
+          <th>Modo</th>
         </tr>
+
       </thead>
 
       <tbody id="log-body"></tbody>
+
     </table>
+
   </div>
 
 </main>
 
 <script>
 
-  // ========= SOCKET =========
+  // ==========================
+  // SOCKET.IO
+  // ==========================
 
   const socket = io();
 
-  const statusText = document.getElementById('status-text');
-
   socket.on('connect', () => {
-    statusText.innerText = 'Conectado en tiempo real';
+
+    document.getElementById('status-text').innerText =
+      'Conectado en tiempo real';
+
+    loadInitialData();
+
   });
 
   socket.on('disconnect', () => {
-    statusText.innerText = 'Desconectado';
+
+    document.getElementById('status-text').innerText =
+      'Desconectado';
+
   });
 
-  // ========= EVENTOS =========
+  // ==========================
+  // NUEVOS EVENTOS
+  // ==========================
 
   socket.on('nuevo_evento', (ev) => {
 
+    console.log('Nuevo evento:', ev);
+
     addLog(ev);
 
+    updateSensors(ev);
+
+  });
+
+  // ==========================
+  // CARGA INICIAL
+  // ==========================
+
+  async function loadInitialData(){
+
+    try{
+
+      // EVENTOS
+
+      const resEvents =
+        await fetch('/api/eventos?limit=50');
+
+      const events =
+        await resEvents.json();
+
+      document.getElementById('met-total').innerText =
+        events.length;
+
+      events.reverse().forEach(ev => {
+        addLog(ev);
+      });
+
+      // STATS
+
+      const resStats =
+        await fetch('/api/stats');
+
+      const stats =
+        await resStats.json();
+
+      document.getElementById('met-cmds').innerText =
+        stats.comandosPendientes || 0;
+
+      if(stats.ultima){
+        updateSensors(stats.ultima);
+      }
+
+    }catch(error){
+
+      console.error(error);
+
+    }
+
+  }
+
+  // ==========================
+  // ACTUALIZAR SENSORES
+  // ==========================
+
+  function updateSensors(ev){
+
     if(ev.distancia !== undefined){
+
       document.getElementById('met-dist').innerText =
         ev.distancia + ' cm';
 
       document.getElementById('s-dist').innerText =
         ev.distancia + ' cm';
+
     }
 
     if(ev.humedad !== undefined){
-      document.getElementById('s-hum').innerText =
-        ev.humedad;
-    }
 
-    if(ev.accion){
-      document.getElementById('s-action').innerText =
-        ev.accion;
+      document.getElementById('s-hum').innerText =
+        ev.humedad + ' %';
+
     }
 
     if(ev.modo){
+
       document.getElementById('s-mode').innerText =
         ev.modo;
+
     }
 
-  });
+    if(ev.accion){
 
-  // ========= LOG =========
+      document.getElementById('s-action').innerText =
+        ev.accion;
+
+    }
+
+  }
+
+  // ==========================
+  // AGREGAR LOG
+  // ==========================
 
   function addLog(ev){
 
-    const tbody = document.getElementById('log-body');
+    const tbody =
+      document.getElementById('log-body');
 
-    const tr = document.createElement('tr');
+    const tr =
+      document.createElement('tr');
 
-    const hora = new Date().toLocaleTimeString();
+    const hora =
+      new Date(ev.timestamp || Date.now())
+      .toLocaleTimeString();
 
     tr.innerHTML = `
       <td>${hora}</td>
       <td>${ev.origen || '-'}</td>
       <td>${ev.accion || '-'}</td>
-      <td>${ev.distancia || '-'}</td>
-      <td>${ev.humedad || '-'}</td>
+      <td>${ev.distancia ?? '-'}</td>
+      <td>${ev.humedad ?? '-'}</td>
+      <td>${ev.modo || '-'}</td>
     `;
 
     tbody.prepend(tr);
+
   }
 
-  // ========= ENVIAR COMANDOS =========
+  // ==========================
+  // ENVIAR COMANDO
+  // ==========================
 
   async function sendCmd(cmd){
 
     try{
 
-      const response = await fetch('/api/enviar-comando', {
+      const response =
+        await fetch('/api/enviar-comando', {
 
-        method:'POST',
+          method:'POST',
 
-        headers:{
-          'Content-Type':'application/json'
-        },
+          headers:{
+            'Content-Type':'application/json'
+          },
 
-        body:JSON.stringify({
-          comando:cmd
-        })
+          body:JSON.stringify({
+            comando:cmd
+          })
 
-      });
+        });
 
-      const data = await response.json();
+      const data =
+        await response.json();
+
+      console.log(data);
 
       document.getElementById('cmd-feedback').innerText =
         'Comando enviado: ' + cmd;
 
       let total =
-        parseInt(document.getElementById('met-cmds').innerText);
+        parseInt(
+          document.getElementById('met-cmds').innerText
+        );
 
       document.getElementById('met-cmds').innerText =
         total + 1;
-
-      console.log(data);
 
     }catch(error){
 
@@ -444,6 +572,10 @@
     }
 
   }
+
+  // ==========================
+  // COMANDO PERSONALIZADO
+  // ==========================
 
   function sendCustomCmd(){
 
