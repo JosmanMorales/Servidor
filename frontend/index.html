@@ -4,393 +4,464 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Robot Oruga — Dashboard SO2</title>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.1/socket.io.min.js"></script>
+
   <style>
     :root {
-      --bg:       #0f1117;
-      --surface:  #1a1d27;
-      --card:     #21253a;
-      --border:   #2e3354;
-      --accent:   #4f8cff;
-      --accent2:  #38e0c8;
-      --warn:     #ffb020;
-      --danger:   #ff4d6d;
-      --success:  #2dd36f;
-      --text:     #e8eaf6;
-      --muted:    #7b82a8;
-      --mono:     'Courier New', monospace;
+      --bg:#0f1117;
+      --surface:#1a1d27;
+      --card:#21253a;
+      --border:#2e3354;
+      --accent:#4f8cff;
+      --accent2:#38e0c8;
+      --warn:#ffb020;
+      --danger:#ff4d6d;
+      --success:#2dd36f;
+      --text:#e8eaf6;
+      --muted:#7b82a8;
+      --mono:'Courier New', monospace;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 14px; min-height: 100vh; }
 
-    /* ── Header ── */
-    header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 24px; display: flex; align-items: center; gap: 12px; }
-    header h1 { font-size: 18px; font-weight: 600; letter-spacing: .02em; }
-    header h1 span { color: var(--accent); }
-    .status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--success); animation: pulse 2s infinite; margin-left: auto; }
-    .status-dot.offline { background: var(--danger); animation: none; }
-    @keyframes pulse { 0%,100%{box-shadow:0 0 0 0 #2dd36f88} 50%{box-shadow:0 0 0 6px #2dd36f00} }
-    #status-text { font-size: 12px; color: var(--muted); }
-
-    /* ── Layout ── */
-    main { padding: 20px 24px; display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: auto auto 1fr; gap: 16px; max-width: 1400px; margin: 0 auto; }
-
-    /* ── Cards métricas ── */
-    .metric-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; }
-    .metric-card .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; }
-    .metric-card .value { font-size: 32px; font-weight: 700; line-height: 1; }
-    .metric-card .value.accent  { color: var(--accent); }
-    .metric-card .value.accent2 { color: var(--accent2); }
-    .metric-card .value.warn    { color: var(--warn); }
-
-    /* ── Panel envío de comandos ── */
-    .cmd-panel { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; grid-column: span 2; }
-    .cmd-panel h2 { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 14px; }
-    .cmd-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
-    .cmd-btn {
-      background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
-      color: var(--text); font-family: var(--mono); font-size: 13px; font-weight: 600;
-      padding: 10px 6px; cursor: pointer; transition: background .12s, border-color .12s, transform .08s;
-      text-align: center;
+    *{
+      box-sizing:border-box;
+      margin:0;
+      padding:0;
     }
-    .cmd-btn:hover  { background: var(--border); border-color: var(--accent); }
-    .cmd-btn:active { transform: scale(.96); }
-    .cmd-btn.motor  { border-left: 3px solid var(--warn); }
-    .cmd-btn.servo  { border-left: 3px solid var(--accent); }
-    .cmd-btn.garra  { border-left: 3px solid var(--accent2); }
-    .cmd-input-row  { display: flex; gap: 8px; }
-    .cmd-input-row input {
-      flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
-      color: var(--text); font-family: var(--mono); font-size: 14px; padding: 9px 12px;
-      outline: none; transition: border-color .12s;
-    }
-    .cmd-input-row input:focus { border-color: var(--accent); }
-    .cmd-input-row button {
-      background: var(--accent); border: none; border-radius: 8px; color: #fff;
-      font-weight: 600; font-size: 13px; padding: 9px 18px; cursor: pointer;
-      transition: background .12s, transform .08s;
-    }
-    .cmd-input-row button:hover  { background: #6ba3ff; }
-    .cmd-input-row button:active { transform: scale(.97); }
-    #cmd-feedback { font-size: 12px; color: var(--success); margin-top: 8px; min-height: 16px; }
 
-    /* ── Sensores ── */
-    .sensor-panel { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; }
-    .sensor-panel h2 { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 14px; }
-    .sensor-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
-    .sensor-row:last-child { border-bottom: none; }
-    .sensor-row .sname { color: var(--muted); font-size: 12px; }
-    .sensor-row .sval  { font-family: var(--mono); font-size: 16px; font-weight: 700; }
-    .bar-wrap { width: 80px; height: 6px; background: var(--surface); border-radius: 3px; overflow: hidden; }
-    .bar-fill { height: 100%; border-radius: 3px; background: var(--accent2); transition: width .4s; }
-    .bar-fill.danger { background: var(--danger); }
-
-    /* ── Log en tiempo real ── */
-    .log-panel { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; grid-column: span 3; }
-    .log-panel h2 { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
-    .log-panel h2 .live-badge { background: var(--danger); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; letter-spacing: .06em; animation: pulse 2s infinite; }
-    #log-controls { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
-    .filter-btn { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; color: var(--muted); font-size: 11px; padding: 4px 10px; cursor: pointer; }
-    .filter-btn.active { border-color: var(--accent); color: var(--accent); }
-    #log-table-wrap { overflow-x: auto; max-height: 340px; overflow-y: auto; border-radius: 6px; }
-    table { width: 100%; border-collapse: collapse; font-size: 12px; }
-    th { background: var(--surface); color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; padding: 8px 12px; text-align: left; position: sticky; top: 0; z-index: 1; }
-    td { padding: 7px 12px; border-bottom: 1px solid var(--border); font-family: var(--mono); white-space: nowrap; }
-    tr:hover td { background: #ffffff08; }
-    tr.new-row td { animation: highlight .8s ease-out; }
-    @keyframes highlight { from{ background: #4f8cff22; } to{ background: transparent; } }
-    .badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; }
-    .badge-U { background:#4f8cff22; color:var(--accent); }
-    .badge-B { background:#38e0c822; color:var(--accent2); }
-    .badge-R { background:#ff4d6d22; color:var(--danger); }
-    .badge-S { background:#ffb02022; color:var(--warn); }
-    .dist-warn { color: var(--danger); font-weight: 700; }
-    #log-empty { text-align: center; color: var(--muted); padding: 32px; display: none; }
-    #clear-btn { margin-left: auto; background: transparent; border: 1px solid var(--border); border-radius: 6px; color: var(--muted); font-size: 11px; padding: 4px 10px; cursor: pointer; }
-    #clear-btn:hover { border-color: var(--danger); color: var(--danger); }
-
-    /* ── Responsive ── */
-    @media (max-width: 900px) {
-      main { grid-template-columns: 1fr 1fr; }
-      .cmd-panel { grid-column: span 2; }
-      .log-panel { grid-column: span 2; }
+    body{
+      background:var(--bg);
+      color:var(--text);
+      font-family:'Segoe UI',system-ui,sans-serif;
+      min-height:100vh;
     }
-    @media (max-width: 600px) {
-      main { grid-template-columns: 1fr; padding: 12px; }
-      .cmd-panel, .log-panel { grid-column: span 1; }
-      .cmd-grid { grid-template-columns: repeat(2,1fr); }
+
+    header{
+      background:var(--surface);
+      border-bottom:1px solid var(--border);
+      padding:16px 24px;
+      display:flex;
+      align-items:center;
+      gap:12px;
+    }
+
+    header h1{
+      font-size:20px;
+    }
+
+    header h1 span{
+      color:var(--accent);
+    }
+
+    .status-dot{
+      width:10px;
+      height:10px;
+      border-radius:50%;
+      background:var(--success);
+      margin-left:auto;
+    }
+
+    main{
+      padding:20px;
+      display:grid;
+      grid-template-columns:1fr 1fr 1fr;
+      gap:16px;
+      max-width:1400px;
+      margin:auto;
+    }
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:10px;
+      padding:18px;
+    }
+
+    .metric{
+      font-size:32px;
+      font-weight:bold;
+      margin-top:10px;
+    }
+
+    .cmd-panel{
+      grid-column:span 2;
+    }
+
+    .cmd-grid{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:10px;
+      margin-top:15px;
+    }
+
+    .cmd-btn{
+      background:var(--surface);
+      border:1px solid var(--border);
+      border-radius:8px;
+      color:white;
+      padding:14px;
+      cursor:pointer;
+      font-size:16px;
+      transition:.2s;
+      font-family:var(--mono);
+    }
+
+    .cmd-btn:hover{
+      border-color:var(--accent);
+      background:#2b3150;
+    }
+
+    .cmd-input-row{
+      display:flex;
+      gap:10px;
+      margin-top:15px;
+    }
+
+    .cmd-input-row input{
+      flex:1;
+      background:var(--surface);
+      border:1px solid var(--border);
+      border-radius:8px;
+      color:white;
+      padding:10px;
+    }
+
+    .cmd-input-row button{
+      background:var(--accent);
+      border:none;
+      color:white;
+      border-radius:8px;
+      padding:10px 20px;
+      cursor:pointer;
+    }
+
+    #cmd-feedback{
+      margin-top:10px;
+      font-size:13px;
+      color:var(--success);
+    }
+
+    .sensor-row{
+      display:flex;
+      justify-content:space-between;
+      margin-top:12px;
+      padding-bottom:10px;
+      border-bottom:1px solid var(--border);
+    }
+
+    .log-panel{
+      grid-column:span 3;
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      margin-top:15px;
+    }
+
+    th, td{
+      padding:10px;
+      border-bottom:1px solid var(--border);
+      text-align:left;
+      font-family:var(--mono);
+      font-size:13px;
+    }
+
+    th{
+      color:var(--muted);
+      background:var(--surface);
+    }
+
+    @media(max-width:900px){
+      main{
+        grid-template-columns:1fr;
+      }
+
+      .cmd-panel,
+      .log-panel{
+        grid-column:span 1;
+      }
+
+      .cmd-grid{
+        grid-template-columns:repeat(2,1fr);
+      }
     }
   </style>
 </head>
+
 <body>
 
 <header>
-  <div style="width:32px;height:32px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;">🤖</div>
-  <h1>Robot <span>Oruga</span> — Dashboard</h1>
+  <div style="font-size:28px">🤖</div>
+  <h1>Robot <span>Oruga</span> Dashboard</h1>
   <span id="status-text">Conectando...</span>
-  <div class="status-dot offline" id="status-dot"></div>
+  <div class="status-dot" id="status-dot"></div>
 </header>
 
 <main>
 
-  <!-- ── Métricas ── -->
-  <div class="metric-card">
-    <div class="label">Total de eventos</div>
-    <div class="value accent" id="met-total">0</div>
-  </div>
-  <div class="metric-card">
-    <div class="label">Última distancia (cm)</div>
-    <div class="value accent2" id="met-dist">—</div>
-  </div>
-  <div class="metric-card">
-    <div class="label">Comandos pendientes</div>
-    <div class="value warn" id="met-cmds">0</div>
+  <div class="card">
+    <div>Total de eventos</div>
+    <div class="metric" id="met-total">0</div>
   </div>
 
-  <!-- ── Envío de comandos ── -->
-  <div class="cmd-panel">
+  <div class="card">
+    <div>Última distancia</div>
+    <div class="metric" id="met-dist">—</div>
+  </div>
+
+  <div class="card">
+    <div>Comandos enviados</div>
+    <div class="metric" id="met-cmds">0</div>
+  </div>
+
+  <!-- PANEL COMANDOS -->
+  <div class="card cmd-panel">
     <h2>Enviar comando al robot</h2>
+
     <div class="cmd-grid">
-      <button class="cmd-btn motor" onclick="sendCmd('a')">a<br><small>M1 ↑</small></button>
-      <button class="cmd-btn motor" onclick="sendCmd('e')">e<br><small>M1 ↓</small></button>
-      <button class="cmd-btn motor" onclick="sendCmd('c')">c<br><small>M2 ↑</small></button>
-      <button class="cmd-btn motor" onclick="sendCmd('g')">g<br><small>M2 ↓</small></button>
-      <button class="cmd-btn servo" onclick="sendCmd('o')">o<br><small>S1 −</small></button>
-      <button class="cmd-btn servo" onclick="sendCmd('p')">p<br><small>S1 +</small></button>
-      <button class="cmd-btn servo" onclick="sendCmd('i')">i<br><small>S2 −</small></button>
-      <button class="cmd-btn servo" onclick="sendCmd('j')">j<br><small>S2 +</small></button>
-      <button class="cmd-btn servo" onclick="sendCmd('l')">l<br><small>S3 −</small></button>
-      <button class="cmd-btn servo" onclick="sendCmd('k')">k<br><small>S3 +</small></button>
-      <button class="cmd-btn garra" onclick="sendCmd('(')">(<br><small>Garra −</small></button>
-      <button class="cmd-btn garra" onclick="sendCmd('&')">&amp;<br><small>Garra +</small></button>
+
+      <button class="cmd-btn" onclick="sendCmd('a')">
+        a<br>M1 ↑
+      </button>
+
+      <button class="cmd-btn" onclick="sendCmd('e')">
+        e<br>M1 ↓
+      </button>
+
+      <button class="cmd-btn" onclick="sendCmd('c')">
+        c<br>M2 ↑
+      </button>
+
+      <button class="cmd-btn" onclick="sendCmd('g')">
+        g<br>M2 ↓
+      </button>
+
+      <button class="cmd-btn" onclick="sendCmd('o')">
+        o<br>S1 -
+      </button>
+
+      <button class="cmd-btn" onclick="sendCmd('p')">
+        p<br>S1 +
+      </button>
+
+      <button class="cmd-btn" onclick="sendCmd('i')">
+        i<br>S2 -
+      </button>
+
+      <button class="cmd-btn" onclick="sendCmd('j')">
+        j<br>S2 +
+      </button>
+
+      <button class="cmd-btn" onclick="sendCmd('l')">
+        l<br>S3 -
+      </button>
+
+      <button class="cmd-btn" onclick="sendCmd('k')">
+        k<br>S3 +
+      </button>
+
+      <button class="cmd-btn" onclick="sendCmd('(')">
+        (<br>Garra -
+      </button>
+
+      <button class="cmd-btn" onclick="sendCmd('&')">
+        &amp;<br>Garra +
+      </button>
+
     </div>
+
     <div class="cmd-input-row">
-      <input type="text" id="cmd-custom" maxlength="1" placeholder="Tecla personalizada (1 carácter)"/>
-      <button onclick="sendCustomCmd()">Enviar ↗</button>
+      <input
+        type="text"
+        id="cmd-custom"
+        maxlength="1"
+        placeholder="Comando personalizado"
+      >
+
+      <button onclick="sendCustomCmd()">
+        Enviar
+      </button>
     </div>
+
     <div id="cmd-feedback"></div>
   </div>
 
-  <!-- ── Sensores ── -->
-  <div class="sensor-panel">
-    <h2>Sensores en tiempo real</h2>
+  <!-- SENSORES -->
+  <div class="card">
+    <h2>Sensores</h2>
+
     <div class="sensor-row">
-      <span class="sname">Humedad</span>
-      <span class="sval accent2" id="s-hum">—</span>
-      <div class="bar-wrap"><div class="bar-fill" id="bar-hum" style="width:0%"></div></div>
+      <span>Humedad</span>
+      <span id="s-hum">—</span>
     </div>
+
     <div class="sensor-row">
-      <span class="sname">Distancia (cm)</span>
-      <span class="sval" id="s-dist">—</span>
-      <div class="bar-wrap"><div class="bar-fill" id="bar-dist" style="width:0%"></div></div>
+      <span>Distancia</span>
+      <span id="s-dist">—</span>
     </div>
+
     <div class="sensor-row">
-      <span class="sname">Modo robot</span>
-      <span class="sval warn" id="s-modo">—</span>
+      <span>Modo</span>
+      <span id="s-mode">—</span>
     </div>
+
     <div class="sensor-row">
-      <span class="sname">Última acción</span>
-      <span class="sval" id="s-accion" style="font-size:22px">—</span>
+      <span>Última acción</span>
+      <span id="s-action">—</span>
     </div>
   </div>
 
-  <!-- ── Log tiempo real ── -->
-  <div class="log-panel">
-    <h2>Log de eventos <span class="live-badge">LIVE</span>
-      <button id="clear-btn" onclick="clearLog()">Limpiar vista</button>
-    </h2>
-    <div id="log-controls">
-      <button class="filter-btn active" onclick="setFilter('all',this)">Todos</button>
-      <button class="filter-btn" onclick="setFilter('U',this)">USB</button>
-      <button class="filter-btn" onclick="setFilter('B',this)">Bluetooth</button>
-      <button class="filter-btn" onclick="setFilter('R',this)">Remoto</button>
-      <button class="filter-btn" onclick="setFilter('SERVER',this)">Servidor</button>
-    </div>
-    <div id="log-table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Timestamp</th>
-            <th>Origen</th>
-            <th>Acción</th>
-            <th>Humedad</th>
-            <th>Distancia</th>
-            <th>Modo</th>
-          </tr>
-        </thead>
-        <tbody id="log-body"></tbody>
-      </table>
-      <div id="log-empty">No hay eventos todavía</div>
-    </div>
+  <!-- LOG -->
+  <div class="card log-panel">
+    <h2>Eventos en tiempo real</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Hora</th>
+          <th>Origen</th>
+          <th>Acción</th>
+          <th>Distancia</th>
+          <th>Humedad</th>
+        </tr>
+      </thead>
+
+      <tbody id="log-body"></tbody>
+    </table>
   </div>
 
 </main>
 
 <script>
-  // ─── Config ────────────────────────────────────────────────────────────────
-  const API = window.location.origin.replace(':80','') + '/api'; // mismo host
-  const BACKEND_URL = window.location.origin.replace(':80','');
 
-  // ─── Socket.io ─────────────────────────────────────────────────────────────
-  const socket = io(BACKEND_URL, { transports: ['websocket', 'polling'] });
-  const dot    = document.getElementById('status-dot');
-  const stxt   = document.getElementById('status-text');
+  // ========= SOCKET =========
+
+  const socket = io();
+
+  const statusText = document.getElementById('status-text');
 
   socket.on('connect', () => {
-    dot.classList.remove('offline');
-    stxt.textContent = 'Conectado en tiempo real';
-    loadInitial();
+    statusText.innerText = 'Conectado en tiempo real';
   });
+
   socket.on('disconnect', () => {
-    dot.classList.add('offline');
-    stxt.textContent = 'Sin conexión';
-  });
-  socket.on('nuevo_evento', ev => {
-    prependRow(ev, true);
-    updateMetrics(ev);
-  });
-  socket.on('comando_enviado', data => {
-    showFeedback(`Comando '${data.comando}' encolado para el robot`, 'var(--success)');
+    statusText.innerText = 'Desconectado';
   });
 
-  // ─── Estado ────────────────────────────────────────────────────────────────
-  let totalEvents = 0;
-  let filterActive = 'all';
-  let rowCount = 0;
-  const MAX_ROWS = 200;
+  // ========= EVENTOS =========
 
-  // ─── Carga inicial ─────────────────────────────────────────────────────────
-  async function loadInitial() {
-    try {
-      const [evRes, stRes] = await Promise.all([
-        fetch(`${API}/eventos?limit=50`),
-        fetch(`${API}/stats`)
-      ]);
-      const events = await evRes.json();
-      const stats  = await stRes.json();
+  socket.on('nuevo_evento', (ev) => {
 
-      document.getElementById('met-total').textContent = stats.total || 0;
-      document.getElementById('met-cmds').textContent  = stats.comandosPendientes || 0;
-      totalEvents = stats.total || 0;
+    addLog(ev);
 
-      const tbody = document.getElementById('log-body');
-      tbody.innerHTML = '';
-      rowCount = 0;
-      events.forEach(e => prependRow(e, false));
-      if (events.length > 0) updateMetrics(events[0]);
-    } catch (e) {
-      console.error('Error carga inicial:', e);
+    if(ev.distancia !== undefined){
+      document.getElementById('met-dist').innerText =
+        ev.distancia + ' cm';
+
+      document.getElementById('s-dist').innerText =
+        ev.distancia + ' cm';
     }
-  }
 
-  // ─── Render fila ───────────────────────────────────────────────────────────
-  function prependRow(ev, animate) {
+    if(ev.humedad !== undefined){
+      document.getElementById('s-hum').innerText =
+        ev.humedad;
+    }
+
+    if(ev.accion){
+      document.getElementById('s-action').innerText =
+        ev.accion;
+    }
+
+    if(ev.modo){
+      document.getElementById('s-mode').innerText =
+        ev.modo;
+    }
+
+  });
+
+  // ========= LOG =========
+
+  function addLog(ev){
+
     const tbody = document.getElementById('log-body');
-    const empty = document.getElementById('log-empty');
-
-    // Filtro
-    if (filterActive !== 'all' && ev.origen !== filterActive) return;
-
-    rowCount++;
-    empty.style.display = 'none';
-
-    // Limitar filas en vista
-    if (tbody.rows.length >= MAX_ROWS) tbody.deleteRow(tbody.rows.length - 1);
 
     const tr = document.createElement('tr');
-    if (animate) tr.className = 'new-row';
 
-    const dist = ev.distancia;
-    const distClass = (dist !== null && dist < 15) ? 'dist-warn' : '';
-    const distText  = dist !== null ? `${dist} cm` : '—';
-    const humText   = ev.humedad  !== null ? ev.humedad : '—';
-    const origen    = ev.origen || 'U';
-    const badgeMap  = { U:'badge-U', B:'badge-B', R:'badge-R', SERVER:'badge-S' };
-    const ts = new Date(ev.timestamp).toLocaleTimeString('es-GT', { hour12: false });
+    const hora = new Date().toLocaleTimeString();
 
     tr.innerHTML = `
-      <td style="color:var(--muted)">${rowCount}</td>
-      <td>${ts}</td>
-      <td><span class="badge ${badgeMap[origen]||'badge-U'}">${origen}</span></td>
-      <td style="font-size:16px;font-weight:700">${escHtml(ev.accion)}</td>
-      <td>${humText}</td>
-      <td class="${distClass}">${distText}</td>
-      <td style="color:var(--muted)">${ev.modo||'—'}</td>
+      <td>${hora}</td>
+      <td>${ev.origen || '-'}</td>
+      <td>${ev.accion || '-'}</td>
+      <td>${ev.distancia || '-'}</td>
+      <td>${ev.humedad || '-'}</td>
     `;
 
-    tbody.insertBefore(tr, tbody.firstChild);
+    tbody.prepend(tr);
   }
 
-  function updateMetrics(ev) {
-    totalEvents++;
-    document.getElementById('met-total').textContent = totalEvents;
-    if (ev.distancia !== null && ev.distancia !== undefined) {
-      document.getElementById('met-dist').textContent = `${ev.distancia} cm`;
-      document.getElementById('s-dist').textContent   = `${ev.distancia} cm`;
-      const pct = Math.min(100, Math.round((ev.distancia / 200) * 100));
-      const bar = document.getElementById('bar-dist');
-      bar.style.width = pct + '%';
-      bar.className = 'bar-fill' + (ev.distancia < 15 ? ' danger' : '');
-    }
-    if (ev.humedad !== null && ev.humedad !== undefined) {
-      document.getElementById('s-hum').textContent   = ev.humedad;
-      document.getElementById('bar-hum').style.width = Math.min(100, Math.round(ev.humedad/10)) + '%';
-    }
-    if (ev.modo)   document.getElementById('s-modo').textContent   = ev.modo;
-    if (ev.accion) document.getElementById('s-accion').textContent = ev.accion;
-  }
+  // ========= ENVIAR COMANDOS =========
 
-  // ─── Envío de comandos ─────────────────────────────────────────────────────
-  async function sendCmd(cmd) {
-    try {
-      const r = await fetch(`${API}/enviar-comando`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ comando: cmd })
+  async function sendCmd(cmd){
+
+    try{
+
+      const response = await fetch('/api/enviar-comando', {
+
+        method:'POST',
+
+        headers:{
+          'Content-Type':'application/json'
+        },
+
+        body:JSON.stringify({
+          comando:cmd
+        })
+
       });
-      if (r.ok) showFeedback(`Comando '${cmd}' enviado`, 'var(--success)');
-      else      showFeedback('Error al enviar comando', 'var(--danger)');
-    } catch (e) {
-      showFeedback('No se pudo conectar con el backend', 'var(--danger)');
+
+      const data = await response.json();
+
+      document.getElementById('cmd-feedback').innerText =
+        'Comando enviado: ' + cmd;
+
+      let total =
+        parseInt(document.getElementById('met-cmds').innerText);
+
+      document.getElementById('met-cmds').innerText =
+        total + 1;
+
+      console.log(data);
+
+    }catch(error){
+
+      console.error(error);
+
+      document.getElementById('cmd-feedback').innerText =
+        'Error enviando comando';
+
     }
+
   }
 
-  function sendCustomCmd() {
-    const val = document.getElementById('cmd-custom').value.trim();
-    if (!val) return showFeedback('Ingresa un carácter', 'var(--warn)');
-    sendCmd(val[0]);
-    document.getElementById('cmd-custom').value = '';
+  function sendCustomCmd(){
+
+    const input =
+      document.getElementById('cmd-custom');
+
+    const cmd =
+      input.value.trim();
+
+    if(!cmd) return;
+
+    sendCmd(cmd);
+
+    input.value = '';
+
   }
 
-  document.getElementById('cmd-custom').addEventListener('keydown', e => {
-    if (e.key === 'Enter') sendCustomCmd();
-  });
-
-  function showFeedback(msg, color) {
-    const el = document.getElementById('cmd-feedback');
-    el.style.color = color;
-    el.textContent = msg;
-    setTimeout(() => el.textContent = '', 3000);
-  }
-
-  // ─── Filtros ───────────────────────────────────────────────────────────────
-  function setFilter(f, btn) {
-    filterActive = f;
-    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    loadInitial();
-  }
-
-  function clearLog() {
-    document.getElementById('log-body').innerHTML = '';
-    rowCount = 0;
-    document.getElementById('log-empty').style.display = 'block';
-  }
-
-  function escHtml(s) {
-    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  }
 </script>
+
 </body>
 </html>
